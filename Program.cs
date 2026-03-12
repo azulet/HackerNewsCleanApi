@@ -15,7 +15,12 @@ builder.Services.AddHttpClient<HackerNewsClient>(client =>
 });
 
 builder.Services.AddScoped<IHackerNewsService, HackerNewsService>();
-builder.Services.AddMemoryCache();
+//builder.Services.AddMemoryCache();
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+    options.InstanceName = "HackerNews:";
+});
 
 builder.Services.AddRateLimiter(options =>
 {
