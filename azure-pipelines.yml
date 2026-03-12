@@ -8,7 +8,7 @@ variables:
   imageName: hackernews-api
   registry: hackernewsregistry.azurecr.io
   dockerRegistryServiceConnection: ACRConnection
-  azureSubscription: azure-devops-connection
+  azureSubscription: azure-test-docker
   webAppName: hackers-new-api
 
 stages:
