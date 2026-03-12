@@ -1,0 +1,76 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  imageName: hackernews-api
+  registry: hackernewsregistry.azurecr.io
+  dockerRegistryServiceConnection: ACRConnection
+  azureSubscription: azure-test-docker
+  webAppName: hackers-new-api
+
+stages:
+
+# -----------------------------
+# STAGE 1 - BUILD
+# -----------------------------
+- stage: Build
+  displayName: Build Docker Image
+  jobs:
+
+  - job: Build
+    displayName: Build and Push Image
+    steps:
+
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '8.0.x'
+
+    - script: dotnet restore
+      displayName: Restore packages
+
+    - script: dotnet build --configuration Release
+      displayName: Build project
+
+    - task: Docker@2
+      displayName: Build Docker Image
+      inputs:
+        command: build
+        Dockerfile: '**/Dockerfile'
+        repository: $(registry)/$(imageName)
+        tags: |
+          latest
+
+    - task: Docker@2
+      displayName: Push Docker Image
+      inputs:
+        command: push
+        repository: $(registry)/$(imageName)
+        tags: |
+          latest
+        containerRegistry: $(dockerRegistryServiceConnection)
+
+# -----------------------------
+# STAGE 2 - DEPLOY
+# -----------------------------
+- stage: Deploy
+  displayName: Deploy to Azure Web App
+  dependsOn: Build
+  condition: succeeded()
+
+  jobs:
+
+  - job: Deploy
+    displayName: Deploy Container
+    steps:
+
+    - task: AzureWebAppContainer@1
+      displayName: Deploy Web App Container
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appName: $(webAppName)
+        containers: |
+          $(registry)/$(imageName):latest
